@@ -670,6 +670,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     gpointer ctx)
 {
     gchar *auth_str;
+    gchar *session_token;
     struct evhttp_request *req;
     gchar auth_key[300];
     time_t t;
@@ -682,13 +683,19 @@ gboolean http_connection_make_request (HttpConnection *con,
     const gchar *bucket_name;
     const gchar *host;
 
-    if (!con->evcon)
+    if (!con->evcon) {
         if (!http_connection_init (con)) {
             LOG_err (CON_LOG, CON_H"Failed to init HTTP connection !", (void *)con);
             if (response_cb)
                 response_cb (con, ctx, FALSE, NULL, 0, NULL);
             return FALSE;
         }
+    }
+
+    if (conf_node_exists (application_get_conf (con->app), "s3.session_token")) {
+    	session_token = conf_get_string (application_get_conf (con->app), "s3.session_token");
+        http_connection_add_output_header (con, "x-amz-security-token", session_token);
+    }
 
     // if this is the first request
     if (!parent_request_data) {

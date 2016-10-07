@@ -17,6 +17,7 @@
  */
 #include "global.h"
 #include "http_connection.h"
+#include "ec2_metadata.h"
 #include "dir_tree.h"
 #include "rfuse.h"
 #include "utils.h"
@@ -289,7 +290,15 @@ static void sigusr1_cb (G_GNUC_UNUSED evutil_socket_t sig, G_GNUC_UNUSED short e
         LOG_err (APP_LOG, "Failed to parse configuration file: %s", _app->conf_path);
         conf_destroy(conf_new);
     } else {
-        const gchar *copy_entries[] = {"s3.host", "s3.port", "s3.access_key_id", "s3.secret_access_key", "s3.bucket_name", NULL};
+        const gchar *copy_entries[] = {
+        		"s3.host",
+				"s3.port",
+				"s3.versioning",
+				"s3.access_key_id",
+				"s3.secret_access_key",
+				"s3.session_token",
+				"s3.bucket_name",
+				NULL};
         int i;
 
         _app->conf = conf_new;
@@ -607,6 +616,7 @@ int main (int argc, char *argv[])
     gint gid = -1;
     gint fmode = -1;
     gint dmode = -1;
+    aws_credentials credentials;
 
     struct event_config *ev_config;
 
@@ -803,29 +813,63 @@ int main (int argc, char *argv[])
     // try to get access parameters from the environment
     if (getenv ("AWS_ACCESS_KEY_ID")) {
         conf_set_string (app->conf, "s3.access_key_id", getenv ("AWS_ACCESS_KEY_ID"));
-    // else check if it's set it the config file
-    } else {
-        if (!conf_node_exists (app->conf, "s3.access_key_id")) {
-            LOG_err (APP_LOG, "Environment variables are not set!\nTry `%s --help' for more information.", argv[0]);
-            application_destroy (app);
-            return -1;
-        }
     }
+
     if (getenv ("AWS_SECRET_ACCESS_KEY")) {
         conf_set_string (app->conf, "s3.secret_access_key", getenv ("AWS_SECRET_ACCESS_KEY"));
-    } else {
-        if (!conf_node_exists (app->conf, "s3.secret_access_key")) {
-            LOG_err (APP_LOG, "Environment variables are not set!\nTry `%s --help' for more information.", argv[0]);
-            application_destroy (app);
-            return -1;
-        }
+    }
+
+    if (getenv("AWS_IAM_ROLE")) {
+    	conf_set_string (app->conf, "s3.iam_role", getenv ("AWS_IAM_ROLE"));
     }
 
     // check if both strings are set
-    if (!conf_get_string (app->conf, "s3.access_key_id") || !conf_get_string (app->conf, "s3.secret_access_key")) {
-        LOG_err (APP_LOG, "Environment variables are not set!\nTry `%s --help' for more information.", argv[0]);
-        application_destroy (app);
-        return -1;
+    if (!conf_get_string (app->conf, "s3.access_key_id") ||
+    		!conf_get_string (app->conf, "s3.secret_access_key")) {
+    	// Only exit if the IAM_ROLE is also not set.
+    	if (!conf_node_exists (app->conf, "s3.iam_role")) {
+			LOG_err (APP_LOG, "Environment variables are not set!\nTry `%s --help' for more information.", argv[0]);
+			application_destroy (app);
+			return -1;
+    	}
+    	else {
+    		LOG_msg(APP_LOG, "Using IAM_ROLE [ %s ].", conf_get_string (app->conf, "s3.iam_role"));
+    		// Initialize the application credentials based on the current EC2 credentials
+    		if (credentials == NULL) {
+    			credentials = malloc(sizeof(*credentials));
+    		}
+    		get_aws_credentials(credentials, conf_get_string (app->conf, "s3.iam_role"));
+    		if (credentials != NULL) {
+    			if (credentials.aws_access_key != NULL) {
+    				conf_set_string (app->conf, "s3.access_key_id", credentials.aws_access_key);
+    			}
+    			else {
+    				LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.", argv[0]);
+    				application_destroy (app);
+    				return -1;
+    			}
+    			if (credentials.aws_secret_access_key != NULL) {
+    				conf_set_string (app->conf, "s3.secret_access_key", credentials.aws_secret_access_key);
+    			}
+    			else {
+    				LOG_err(APP_LOG, "Unable to obtain secret access key from EC2.", argv[0]);
+    				application_destroy (app);
+    				return -1;
+    			}
+    			if (credentials.aws_session_token != NULL) {
+    				conf_set_string (app->conf, "s3.session_token", credentials.aws_session_token);
+    			}
+    			else {
+    				LOG_err(APP_LOG, "Unable to obtain the session token from EC2.", argv[0]);
+    				application_destroy (app);
+    				return -1;
+    			}
+
+    		}
+    		else {
+    			LOG_err(APP_LOG, "Unable to retrieve EC2 metadata!", argv[0]);
+    		}
+    	}
     }
 
 
