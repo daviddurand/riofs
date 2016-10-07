@@ -13,8 +13,8 @@ riofs_SOURCES += stat_srv.c
 riofs_SOURCES += utils.c
 riofs_SOURCES += conf.c
 riofs_SOURCES += range.c
-riofs_SOURCES += ec2_metadata.c
 riofs_SOURCES += jsmn.c
+riofs_SOURCES += ec2_metadata.c
 riofs_SOURCES += main.c
 
 riofs_CFLAGS = $(AM_CFLAGS) $(DEPS_CFLAGS) $(LEDEPS_CFLAGS) $(LIBEVENT_OPENSSL_CFLAGS) $(SSL_CFLAGS) $(MAGIC_CFLAGS)
