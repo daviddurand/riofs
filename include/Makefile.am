@@ -11,5 +11,6 @@ include_HEADERS += stat_srv.h
 include_HEADERS += range.h
 include_HEADERS += utils.h
 include_HEADERS += conf_keys.h
-include_HEADERS += ec2_metadata.h
 include_HEADERS += jsmn.h
+include_HEADERS += ec2_metadata.h
+
