@@ -16,6 +16,9 @@ typedef struct  {
 	size_t size;
 } memory_structure;
 
+/*
+ * Memory structure used to hold the parsed AWS credential data.
+ */
 typedef struct {
 	char *last_updated;
 	char *aws_access_key;
@@ -68,6 +71,19 @@ const char *JSON_AWS_TOKEN = "Token";
  * requires one extra to handle the trailing bracket.)
  */
 const int JSON_AWS_TOKEN_COUNT = 15;
+
+/*
+ * New credentials should be made available when we are within 5 minutes
+ * of expiration.  Setting this value to less than 5 should give us a couple
+ * of chances to retrieve new credentials.
+ */
+const int CREDENTIAL_EXPIRATION_WINDOW = (3 * 60);
+
+/*
+ * Prototype for function that will determine if we need to get new 
+ * AWS credentials.
+ */
+void aws_credential_update_needed(char *aws_time);
 
 /*
  * Prototype for function that will retrieve the AWS credential data
