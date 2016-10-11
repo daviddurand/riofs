@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <curl/curl.h>
 #include "jsmn.h"
 #include "ec2_metadata.h"
@@ -29,6 +30,22 @@ char *get_ec2_metadata_url (char *iam_role)
 	strcat(url, EC2_IAM_ROLE_OFFSET);
 	strcat(url, iam_role);
 	return url;
+}
+
+/*
+ * Convert a time string retrieved from AWS into a time_t type.
+ * This method was taken from the s3fs project.
+ */
+time_t convert_cred_expiration_string(const char *aws_time)
+{
+    	struct tm tm;
+	if (!aws_time)
+	{
+		return 0L;
+	}
+	memset(&tm, 0, sizeof(struct tm));
+	strptime(aws_time, "%Y-%m-%dT%H:%M:%S", &tm);
+	return timegm(&ym);
 }
 
 /*
@@ -78,7 +95,7 @@ static int json_equals(const char *json, jsmntok_t *token, const char *field)
  * the cURL GET method and extracts the AWS credentials.
  *
  * This method assumes the availability of the jsmn (i.e. "jasmine") JSON
- * parser library.
+ * parser library which is embedded with the project.
  */
 int parse_json_response(aws_credentials *creds, char *response)
 {
@@ -204,7 +221,7 @@ void get_aws_credentials(aws_credentials *creds, char *iam_role) {
 	result = curl_easy_perform(curl_handle);
 	if (result != CURLE_OK)
 	{
-        printf("Error performing cURL operation.  Response [ %i ].", result);
+        	printf("Error performing cURL operation.  Response [ %i ].", result);
 	}
 	else
 	{
@@ -219,6 +236,9 @@ void get_aws_credentials(aws_credentials *creds, char *iam_role) {
 	curl_global_cleanup();
 }
 
+/*
+ * Test method used to output the credentials extracted from AWS.
+ */
 void print_aws_credentials(aws_credentials *creds)
 {
 	printf("\nLast Updated [ %s ]\n", creds->last_updated);
@@ -226,6 +246,11 @@ void print_aws_credentials(aws_credentials *creds)
 	printf("Secret Access Key [ %s ]\n", creds->aws_secret_access_key);
 	printf("Token [ %s ]\n", creds->aws_session_token);
 	printf("Expiration [ %s ]\n", creds->expiration);
+}
+
+void update_aws_credentials(Application *app)
+{
+	
 }
 
 int main(void)
