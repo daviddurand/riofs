@@ -25,6 +25,7 @@
 #include "cache_mng.h"
 #include "stat_srv.h"
 #include "conf_keys.h"
+#include <unistd.h>
 
 /*{{{ struct */
 struct _Application {
@@ -592,6 +593,102 @@ static void application_destroy (Application *app)
 }
 /*}}}*/
 
+
+void set_aws_credentials(aws_credentials *creds, Application *app)
+{
+	if (app != NULL) {
+		if (creds != NULL) {
+			if (creds->aws_access_key != NULL) {
+				conf_set_string (app->conf, "s3.access_key_id", creds->aws_access_key);
+			}
+			else {
+				LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.");
+			}
+			if (creds->aws_secret_access_key != NULL) {
+				conf_set_string (app->conf, "s3.secret_access_key", creds->aws_secret_access_key);
+			}
+			else {
+				LOG_err(APP_LOG, "Unable to obtain secret access key from EC2.");
+			}
+			if (creds->aws_session_token != NULL) {
+				conf_set_string (app->conf, "s3.session_token", creds->aws_session_token);
+			}
+			else {
+				LOG_err(APP_LOG, "Unable to obtain the session token from EC2.");
+			}
+			if (creds->expiration != NULL) {
+				conf_set_string (app->conf, "s3.session_expiration", creds->expiration);
+			}
+			else {
+				LOG_err(APP_LOG, "Unable to obtain the session expiration time from EC2.");
+			}
+		}
+		else
+		{
+			LOG_err(APP_LOG, "Unable to retrieve EC2 metadata!");
+		}
+	}
+	else {
+		LOG_err(APP_LOG, "Global Application reference not yet populated.");
+	}
+}
+
+/*
+ * Test method to print out the updated credentials when they change.
+ */
+void log_aws_credentials(Application *app)
+{
+	char *access_key;
+	char *expiration;
+	char *iam_role;
+	char *secret_access_key;
+	char *session_token;
+
+	if (app != NULL) {
+		access_key = conf_get_string (_app->conf, "s3.access_key_id");
+		expiration = conf_get_string (_app->conf, "s3.session_expiration");
+		iam_role = conf_get_string (_app->conf, "s3.iam_role");
+		secret_access_key = conf_get_string (_app->conf, "s3.secret_access_key");
+		session_token = conf_get_string (_app->conf, "s3.session_token");
+		LOG_msg(APP_LOG, "Using IAM Role [ %s ], access key [ %s ], secret access key [ %s ], and expiration [ %s ]",
+				iam_role, access_key, secret_access_key, expiration);
+	}
+	else
+	{
+		LOG_err(APP_LOG, "Global Application reference not yet populated.");
+	}
+}
+
+void check_aws_credentials ()
+{
+	gchar *expiration;
+	gchar *iam_role;
+	aws_credentials *creds;
+
+	LOG_msg(APP_LOG, "Credential update alarm fired.");
+
+	if (_app)
+	{
+		expiration = conf_get_string (_app->conf, "s3.session_expiration");
+		iam_role = conf_get_string (_app->conf, "s3.iam_role");
+		if (aws_credential_update_needed(expiration))
+		{
+			LOG_msg(APP_LOG, "Credential update needed!");
+			if (creds == NULL) {
+				creds = malloc(sizeof(*creds));
+			}
+			get_aws_credentials(creds, iam_role);
+			set_aws_credentials(creds, _app);
+			free(creds);
+		}
+	}
+	else {
+		LOG_err(APP_LOG, "Global Application reference not yet populated.");
+	}
+	// Reset the alarm
+	alarm(CREDENTIAL_ALARM_DURATION);
+}
+
 /*{{{ main */
 int main (int argc, char *argv[])
 {
@@ -864,6 +961,18 @@ int main (int argc, char *argv[])
     				application_destroy (app);
     				return -1;
     			}
+    			if (credentials->expiration != NULL) {
+    				conf_set_string (app->conf, "s3.session_expiration", credentials->expiration);
+    			}
+    			else {
+    				LOG_err(APP_LOG, "Unable to obtain the session expiration time from EC2.", argv[0]);
+    				application_destroy (app);
+    				return -1;
+    			}
+
+    			// Set the alarm to see if we need to update credentials
+    			signal(SIGALRM, check_aws_credentials);
+    			alarm(CREDENTIAL_ALARM_DURATION);
 
     		}
     		else {

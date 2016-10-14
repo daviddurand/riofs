@@ -38,14 +38,14 @@ char *get_ec2_metadata_url (char *iam_role)
  */
 time_t convert_cred_expiration_string(const char *aws_time)
 {
-    	struct tm tm;
+    struct tm tm;
 	if (!aws_time)
 	{
 		return 0L;
 	}
 	memset(&tm, 0, sizeof(struct tm));
 	strptime(aws_time, "%Y-%m-%dT%H:%M:%S", &tm);
-	return timegm(&ym);
+	return timegm(&tm);
 }
 
 /*
@@ -194,6 +194,9 @@ void remove_whitespace(char *json)
 	json[count] = '\0';
 }
 
+/*
+ * Retrieve the current credentials from AWS.
+ */
 void get_aws_credentials(aws_credentials *creds, char *iam_role) {
 
 	char *url;
@@ -248,16 +251,17 @@ void print_aws_credentials(aws_credentials *creds)
 	printf("Expiration [ %s ]\n", creds->expiration);
 }
 
-int main(void)
+/*
+ * Compare the expiration time to the current time to see if we need to update
+ * the AWS credentials.
+ */
+int aws_credential_update_needed(char *aws_time)
 {
-
-	aws_credentials *creds;
-	if (creds == NULL) {
-		creds = malloc(sizeof(*creds));
+	time_t expiration_time = convert_cred_expiration_string(aws_time);
+	if ((time(NULL) + CREDENTIAL_EXPIRATION_WINDOW) <= expiration_time)
+	{
+		return 0;
 	}
-	get_aws_credentials(creds, "S3FileServer");
-	print_aws_credentials(creds);
-
+	return 1;
 }
-
 

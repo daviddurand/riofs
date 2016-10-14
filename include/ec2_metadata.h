@@ -30,39 +30,39 @@ typedef struct {
 /*
  * Base URL for the EC2 instance metadata.
  */
-const char *EC2_INSTANCE_META_DATA_URL = "http://instance-data/latest/meta-data/";
+#define EC2_INSTANCE_META_DATA_URL = "http://instance-data/latest/meta-data/";
 
 /*
  * Offset URL context for retrieving the temporary IAM role credentials.
  */
-const char *EC2_IAM_ROLE_OFFSET = "iam/security-credentials/";
+#define EC2_IAM_ROLE_OFFSET = "iam/security-credentials/";
 
 /*
  * JSON element containing the time when the IAM role credentials were last
  * updated.
  */
-const char *JSON_AWS_CREDENTIAL_CREATED = "LastUpdated";
+#define JSON_AWS_CREDENTIAL_CREATED = "LastUpdated";
 
 /*
  * JSON element containing the time when the IAM role credentials are set to
  * expire.
  */
-const char *JSON_AWS_CREDENTIAL_EXPIRATION = "Expiration";
+#define JSON_AWS_CREDENTIAL_EXPIRATION = "Expiration";
 
 /*
  * JSON element containing the AWS access key.
  */
-const char *JSON_AWS_ACCESS_KEY = "AccessKeyId";
+#define JSON_AWS_ACCESS_KEY = "AccessKeyId";
 
 /*
  * JSON element containing the AWS secret access key.
  */
-const char *JSON_AWS_SECRET_ACCESS_KEY = "SecretAccessKey";
+#define JSON_AWS_SECRET_ACCESS_KEY = "SecretAccessKey";
 
 /*
  * JSON element containing the token
  */
-const char *JSON_AWS_TOKEN = "Token";
+#define JSON_AWS_TOKEN = "Token";
 
 /*
  * The number of tokens (i.e. tokens in the context of the jsmn JSON
@@ -70,20 +70,27 @@ const char *JSON_AWS_TOKEN = "Token";
  * actually only 14 tokens, however, the squirrelly jsmn JSON processor
  * requires one extra to handle the trailing bracket.)
  */
-const int JSON_AWS_TOKEN_COUNT = 15;
+#define JSON_AWS_TOKEN_COUNT = 15;
 
 /*
  * New credentials should be made available when we are within 5 minutes
  * of expiration.  Setting this value to less than 5 should give us a couple
  * of chances to retrieve new credentials.
  */
-const int CREDENTIAL_EXPIRATION_WINDOW = (3 * 60);
+#define CREDENTIAL_EXPIRATION_WINDOW = (3 * 60);
+
+/*
+ * Defines the number of seconds between checks on the expiration status of
+ * the AWS credentials.  Since EC2 expires credentials far more frequently
+ * than commercial AWS we're checking every minute.
+ */
+#define CREDENTIAL_ALARM_DURATION = 60;
 
 /*
  * Prototype for function that will determine if we need to get new 
  * AWS credentials.
  */
-void aws_credential_update_needed(char *aws_time);
+int aws_credential_update_needed(char *aws_time);
 
 /*
  * Prototype for function that will retrieve the AWS credential data
