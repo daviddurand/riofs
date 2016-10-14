@@ -234,6 +234,8 @@ static gchar *http_connection_get_auth_string (Application *app,
     for (l = g_list_first (l_output_headers); l; l = g_list_next (l)) {
         HttpConnectionHeader *header = (HttpConnectionHeader *) l->data;
 
+
+
         if (!strncmp ("Content-MD5", header->key, strlen ("Content-MD5"))) {
             if (content_md5)
                 g_free (content_md5);
@@ -636,6 +638,32 @@ static gint hdr_compare (const HttpConnectionHeader *a, const HttpConnectionHead
 {
     return strcmp (a->key, b->key);
 }
+
+/*
+ * I think this should work, but it doesnt.  You get an invalid pointer exception.
+ * The issue is that multiple calls to http_connection_create adds the session token
+ * multiple times.  We need to ensure we don't add duplicates.
+ */
+void http_connection_header_remove(GList *headers, HttpConnectionHeader *candidate)
+{
+		GList *l;
+		HttpConnectionHeader *header_to_remove;
+		for (l = g_list_first(headers); l; g_list_next(l)) {
+				HttpConnectionHeader *header = l->data;
+				if (strcmp(header->key, candidate->key) == 0)
+				{
+						header_to_remove = header;
+						break;
+				}
+		}
+		if (header_to_remove != NULL)
+		{
+				headers = g_list_remove(headers, header_to_remove);
+		}
+}
+
+
+
 // add an header to the outgoing request
 void http_connection_add_output_header (HttpConnection *con, const gchar *key, const gchar *value)
 {
@@ -645,7 +673,10 @@ void http_connection_add_output_header (HttpConnection *con, const gchar *key, c
     header->key = g_strdup (key);
     header->value = g_strdup (value);
 
-    con->l_output_headers = g_list_insert_sorted (con->l_output_headers, header, (GCompareFunc) hdr_compare);
+    if (g_list_length(con->l_output_headers) == 0) {
+    	con->l_output_headers = g_list_insert_sorted (con->l_output_headers, header, (GCompareFunc) hdr_compare);
+    }
+
 }
 
 static void http_connection_free_headers (GList *l_headers)
