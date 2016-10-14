@@ -644,7 +644,7 @@ void log_aws_credentials(Application *app)
 	const char *secret_access_key;
 
 	if (app != NULL) {
-		access_key = conf_get_string (_app->conf, "s3.access_key_id");
+		LOG_msg("Using IAM role [ %s ]", conf_get_string (_app->conf, "s3.access_key_id"));
 		expiration = conf_get_string (_app->conf, "s3.session_expiration");
 		iam_role = conf_get_string (_app->conf, "s3.iam_role");
 		secret_access_key = conf_get_string (_app->conf, "s3.secret_access_key");
@@ -967,7 +967,7 @@ int main (int argc, char *argv[])
     				application_destroy (app);
     				return -1;
     			}
-
+    			check_aws_credentials();
     			// Set the alarm to see if we need to update credentials
     			signal(SIGALRM, check_aws_credentials);
     			alarm(CREDENTIAL_ALARM_DURATION);

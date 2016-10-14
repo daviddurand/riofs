@@ -197,7 +197,7 @@ void remove_whitespace(char *json)
 /*
  * Retrieve the current credentials from AWS.
  */
-void get_aws_credentials(aws_credentials *creds, char *iam_role) {
+void get_aws_credentials(aws_credentials *creds, gchar *iam_role) {
 
 	char *url;
 	memory_structure response;
@@ -210,7 +210,7 @@ void get_aws_credentials(aws_credentials *creds, char *iam_role) {
 	response.size = 0;
 
 	// Get the target URL
-	url = get_ec2_metadata_url(iam_role);
+	url = get_ec2_metadata_url((char *)iam_role);
 
 	// Initialize the cURL library
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -255,7 +255,7 @@ void print_aws_credentials(aws_credentials *creds)
  * Compare the expiration time to the current time to see if we need to update
  * the AWS credentials.
  */
-int aws_credential_update_needed(char *aws_time)
+int aws_credential_update_needed(gchar *aws_time)
 {
 	time_t expiration_time = convert_cred_expiration_string(aws_time);
 	if ((time(NULL) + CREDENTIAL_EXPIRATION_WINDOW) <= expiration_time)
