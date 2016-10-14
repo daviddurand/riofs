@@ -252,7 +252,9 @@ int main(void)
 {
 
 	aws_credentials *creds;
-	creds = malloc(sizeof(*creds));
+	if (creds == NULL) {
+		creds = malloc(sizeof(*creds));
+	}
 	get_aws_credentials(creds, "S3FileServer");
 	print_aws_credentials(creds);
 
