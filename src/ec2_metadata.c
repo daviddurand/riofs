@@ -221,7 +221,7 @@ void get_aws_credentials(aws_credentials *creds, char *iam_role) {
 	result = curl_easy_perform(curl_handle);
 	if (result != CURLE_OK)
 	{
-        	printf("Error performing cURL operation.  Response [ %i ].", result);
+        printf("Error performing cURL operation.  Response [ %i ].", result);
 	}
 	else
 	{
@@ -248,18 +248,11 @@ void print_aws_credentials(aws_credentials *creds)
 	printf("Expiration [ %s ]\n", creds->expiration);
 }
 
-void update_aws_credentials(Application *app)
-{
-	
-}
-
 int main(void)
 {
 
 	aws_credentials *creds;
-	if (creds == NULL) {
-		creds = malloc(sizeof(*creds));
-	}
+	creds = malloc(sizeof(*creds));
 	get_aws_credentials(creds, "S3FileServer");
 	print_aws_credentials(creds);
 
