@@ -670,7 +670,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     gpointer ctx)
 {
     gchar *auth_str;
-    gchar *session_token;
+    const gchar *session_token;
     struct evhttp_request *req;
     gchar auth_key[300];
     time_t t;

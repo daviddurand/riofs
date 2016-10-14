@@ -659,8 +659,8 @@ void log_aws_credentials(Application *app)
 
 void check_aws_credentials ()
 {
-	gchar *expiration;
-	gchar *iam_role;
+	const gchar *expiration;
+	const gchar *iam_role;
 	aws_credentials *creds;
 
 	LOG_msg(APP_LOG, "Credential update alarm fired.");
