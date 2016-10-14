@@ -638,18 +638,16 @@ void set_aws_credentials(aws_credentials *creds, Application *app)
  */
 void log_aws_credentials(Application *app)
 {
-	char *access_key;
-	char *expiration;
-	char *iam_role;
-	char *secret_access_key;
-	char *session_token;
+	const char *access_key;
+	const char *expiration;
+	const char *iam_role;
+	const char *secret_access_key;
 
 	if (app != NULL) {
 		access_key = conf_get_string (_app->conf, "s3.access_key_id");
 		expiration = conf_get_string (_app->conf, "s3.session_expiration");
 		iam_role = conf_get_string (_app->conf, "s3.iam_role");
 		secret_access_key = conf_get_string (_app->conf, "s3.secret_access_key");
-		session_token = conf_get_string (_app->conf, "s3.session_token");
 		LOG_msg(APP_LOG, "Using IAM Role [ %s ], access key [ %s ], secret access key [ %s ], and expiration [ %s ]",
 				iam_role, access_key, secret_access_key, expiration);
 	}
@@ -713,7 +711,7 @@ int main (int argc, char *argv[])
     gint gid = -1;
     gint fmode = -1;
     gint dmode = -1;
-    aws_credentials credentials;
+    aws_credentials *credentials;
 
     struct event_config *ev_config;
 
