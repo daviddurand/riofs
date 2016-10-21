@@ -90,12 +90,12 @@ typedef struct {
  * Prototype for function that will determine if we need to get new 
  * AWS credentials.
  */
-int aws_credential_update_needed(char *aws_time);
+int aws_credential_update_needed(gchar *aws_time);
 
 /*
  * Prototype for function that will retrieve the AWS credential data
  * associated with the IAM role.
  */
-void get_aws_credentials(aws_credentials *creds, char *iam_role);
+int get_aws_credentials(aws_credentials *creds, gchar *iam_role);
 
 #endif /* INCLUDE_EC2_METADATA_H_ */

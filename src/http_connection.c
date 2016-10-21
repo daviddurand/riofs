@@ -18,6 +18,7 @@
 #include "http_connection.h"
 #include "utils.h"
 #include "stat_srv.h"
+#include "ec2_metadata.h"
 
 /*{{{ struct*/
 
@@ -675,19 +676,21 @@ void http_connection_add_output_header (HttpConnection *con, const gchar *key, c
     header->value = g_strdup (value);
 
     // Make sure that we don't add the same header twice
-    GList *iterator = g_list_first(con->l_output_headers);
-    while (iterator != NULL) {
-    	GList *next = iterator->next;
-    	temp = (HttpConnectionHeader *)iterator->data;
-    	if (strcmp(key, temp->key) == 0) {
-    		iterator = g_list_remove(con->l_output_headers, iterator->data);
-    		free(temp->key);
-    		free(temp->value);
-    		free(temp);
-    	}
-    	iterator = next;
+    if (con->l_output_headers != NULL) {
+		GList *iterator = g_list_first(con->l_output_headers);
+		while (iterator != NULL) {
+			GList *next = iterator->next;
+			temp = (HttpConnectionHeader *)iterator->data;
+			if (strcmp(key, temp->key) == 0) {
+				printf("duplicate header found...freeing.");
+				iterator = g_list_remove(con->l_output_headers, iterator->data);
+				free(temp->key);
+				free(temp->value);
+				free(temp);
+			}
+			iterator = next;
+		}
     }
-
     con->l_output_headers = g_list_insert_sorted (
     		con->l_output_headers,
 			header,
@@ -756,6 +759,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     		    "s3.iam_role");
     		if (get_aws_credentials(creds, iam_role) == 0) {
     			if (creds != NULL) {
+    				printf("Successfully retrieved credentials!\n");
     				set_aws_credentials(creds, con->app);
     			}
     			free(creds->last_updated);
@@ -764,6 +768,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     			free(creds->aws_session_token);
     			free(creds->expiration);
     			free(creds);
+    			printf("Freed memory used by credentials!\n");
     		}
     		else {
     			LOG_err(CON_LOG, "Unable to retrieve updated credentials from EC2.");
@@ -774,6 +779,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     	session_token = conf_get_string (
     			application_get_conf (con->app),
 				"s3.session_token");
+    	printf("Adding output header...");
     	http_connection_add_output_header (
     			con,
 				"x-amz-security-token",
