@@ -1,18 +1,20 @@
 # RioFS [![Build Status](https://secure.travis-ci.org/skoobe/riofs.png)](https://travis-ci.org/skoobe/riofs) <a href="https://scan.coverity.com/projects/406"><img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/406/badge.svg"/></a>
 
-RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on Linux and MacOSX. It supports versioned and non-versioned buckets in all AWS regions. RioFS development started at [Skoobe](https://www.skoobe.de) as a storage backend for legacy daemons which cannot talk natively to S3. It handles buckets with many thousands of keys and highly concurrent access gracefully.
+RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on Linux and MacOSX. It supports versioned and non-versioned buckets in all AWS regions. RioFS development started at [Skoobe](https://www.skoobe.de) as a storage backend for legacy daemons which cannot talk natively to S3. It handles buckets with many thousands of keys and highly concurrent access gracefully.  
+
+This particular repository is a fork of the original RioFS with support for IAM roles.  It has an additional dependancy on libcurl.
 
 ### Dependencies
 
 * C compiler
-* glib >= 2.22
 * autoconf
 * automake
+* glib >= 2.22
 * fuse >= 2.7.3
 * libevent >= 2.0
 * libxml >= 2.6
 * libcrypto >= 0.9
-* libcurl
+* libcurl >= 7.0
 * libmagic (optional: --with-libmagic=PATH)
 
 Find here installation guides for [Ubuntu](https://github.com/skoobe/riofs/wiki/Ubuntu), [Centos](https://github.com/skoobe/riofs/wiki/Centos) and [MacOSX](https://github.com/skoobe/riofs/wiki/MacOSX)
@@ -31,6 +33,9 @@ sudo make install
 ```
 export AWS_ACCESS_KEY_ID="your AWS access key"
 export AWS_SECRET_ACCESS_KEY="your AWS secret access key"
+- or - 
+export AWS_IAM_ROLE="Your IAM role"
+
 riofs [options] [bucketname] [mountpoint]
 ```
 
