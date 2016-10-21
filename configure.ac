@@ -4,7 +4,7 @@ m4_define([version_micro], [0])
 m4_define([version_micro_extra], version_micro)
 m4_append([version_micro_extra], [])
 
-AC_INIT([riofs], [version_major.version_minor.version_micro_extra], [paul.ionkin@gmail.com], , [https://github.com/skoobe/riofs])
+AC_INIT([riofs], [version_major.version_minor.version_micro_extra], [l.craig.carpenter@gmail.com], , [https://github.com/carpenlc/riofs])
 
 AC_PREREQ(2.61)
 AC_CONFIG_MACRO_DIR([m4])
@@ -37,7 +37,7 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T
 
-PKG_CHECK_MODULES([DEPS], [glib-2.0 >= 2.22 fuse >= 2.7.3 libxml-2.0 >= 2.6 libcrypto >= 0.9])
+PKG_CHECK_MODULES([DEPS], [glib-2.0 >= 2.22 fuse >= 2.7.3 libxml-2.0 >= 2.6 libcrypto >= 0.9, libcurl >= 7.0])
 
 AC_ARG_WITH(libevent,
     AS_HELP_STRING(--with-libevent=PATH, base of libevent2 installation),
@@ -68,6 +68,38 @@ AC_ARG_WITH(libevent,
     ],
     [
         PKG_CHECK_MODULES([LEDEPS], [libevent >= 2.0])
+    ]
+)
+
+AC_ARG_WITH(libevent,
+    AS_HELP_STRING(--with-curl=PATH, base of libcurl installation),
+    [
+    case $with_libcurl in
+    no)
+        AC_MSG_ERROR([Please specify libcurl installation path])
+    ;;
+    yes)
+        PKG_CHECK_MODULES([LEDEPS], [libcurl >= 7.0])
+    ;;
+    *)
+        CFLAGS="-I$with_libcurl/include"
+        LDFLAGS="-L$with_libcurl/lib -lcurl"
+
+        AC_CHECK_HEADERS(curl.h, [],
+            AC_MSG_ERROR([libcurl headers not found or not usable])
+        )
+
+        AC_CHECK_LIB(event, [main], [],
+            AC_MSG_ERROR([Could not find libcurl])
+        )
+
+        LEDEPS_CFLAGS="-I$with_libcurl/include"
+        LEDEPS_LIBS="-L$with_libcurl/lib -lcurl"
+    ;;
+    esac
+    ],
+    [
+        PKG_CHECK_MODULES([LEDEPS], [libcurl >= 7.0])
     ]
 )
 

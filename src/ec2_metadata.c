@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <glib.h>
 #include <curl/curl.h>
 #include "jsmn.h"
 #include "ec2_metadata.h"
@@ -249,8 +250,7 @@ int get_aws_credentials(aws_credentials *creds, gchar *iam_role) {
 /*
  * Test method used to output the credentials extracted from AWS.
  */
-void print_aws_credentials(aws_credentials *creds)
-{
+void print_aws_credentials(aws_credentials *creds) {
 	printf("\nLast Updated [ %s ]\n", creds->last_updated);
 	printf("Access Key [ %s ]\n", creds->aws_access_key);
 	printf("Secret Access Key [ %s ]\n", creds->aws_secret_access_key);
@@ -264,11 +264,12 @@ void print_aws_credentials(aws_credentials *creds)
  */
 int aws_credential_update_needed(gchar *aws_time)
 {
+	time_t now = time(NULL);
 	time_t expiration_time = convert_cred_expiration_string(aws_time);
-	if ((time(NULL) + CREDENTIAL_EXPIRATION_WINDOW) <= expiration_time)
-	{
-		return 0;
+
+	if (now > (expiration_time - CREDENTIAL_EXPIRATION_WINDOW)) {
+		return TRUE;
 	}
-	return 1;
+	return FALSE;
 }
 

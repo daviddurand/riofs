@@ -593,9 +593,11 @@ static void application_destroy (Application *app)
 }
 /*}}}*/
 
-
-void set_aws_credentials(aws_credentials *creds, Application *app)
-{
+/*
+ * Method used to set the aws credential properties within the global
+ * Application.
+ */
+int set_aws_credentials(aws_credentials *creds, Application *app) {
 	if (app != NULL) {
 		if (creds != NULL) {
 			if (creds->aws_access_key != NULL) {
@@ -603,24 +605,28 @@ void set_aws_credentials(aws_credentials *creds, Application *app)
 			}
 			else {
 				LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.");
+				return -1
 			}
 			if (creds->aws_secret_access_key != NULL) {
 				conf_set_string (app->conf, "s3.secret_access_key", creds->aws_secret_access_key);
 			}
 			else {
 				LOG_err(APP_LOG, "Unable to obtain secret access key from EC2.");
+				return -1;
 			}
 			if (creds->aws_session_token != NULL) {
 				conf_set_string (app->conf, "s3.session_token", creds->aws_session_token);
 			}
 			else {
 				LOG_err(APP_LOG, "Unable to obtain the session token from EC2.");
+				return -1;
 			}
 			if (creds->expiration != NULL) {
 				conf_set_string (app->conf, "s3.session_expiration", creds->expiration);
 			}
 			else {
 				LOG_err(APP_LOG, "Unable to obtain the session expiration time from EC2.");
+				return -1;
 			}
 		}
 		else
@@ -631,6 +637,7 @@ void set_aws_credentials(aws_credentials *creds, Application *app)
 	else {
 		LOG_err(APP_LOG, "Global Application reference not yet populated.");
 	}
+	return 0;
 }
 
 /*
@@ -651,8 +658,7 @@ void log_aws_credentials(Application *app)
 		LOG_msg(APP_LOG, "Using IAM Role [ %s ], access key [ %s ], secret access key [ %s ], and expiration [ %s ]",
 				iam_role, access_key, secret_access_key, expiration);
 	}
-	else
-	{
+	else {
 		LOG_err(APP_LOG, "Global Application reference not yet populated.");
 	}
 }

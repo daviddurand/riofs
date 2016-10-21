@@ -74,17 +74,10 @@ typedef struct {
 
 /*
  * New credentials should be made available when we are within 5 minutes
- * of expiration.  Setting this value to less than 5 should give us a couple
- * of chances to retrieve new credentials.
+ * of expiration.  Set it a little less than 5 min to enusre that we're
+ * within the window.
  */
-#define CREDENTIAL_EXPIRATION_WINDOW (3 * 60)
-
-/*
- * Defines the number of seconds between checks on the expiration status of
- * the AWS credentials.  Since EC2 expires credentials far more frequently
- * than commercial AWS we're checking every minute.
- */
-#define CREDENTIAL_ALARM_DURATION 60
+#define CREDENTIAL_EXPIRATION_WINDOW (4 * 60)
 
 /*
  * Prototype for function that will determine if we need to get new 

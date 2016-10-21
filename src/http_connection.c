@@ -682,14 +682,15 @@ void http_connection_add_output_header (HttpConnection *con, const gchar *key, c
 			GList *next = iterator->next;
 			temp = (HttpConnectionHeader *)iterator->data;
 			if (strcmp(key, temp->key) == 0) {
-				printf("duplicate header found...freeing.");
-				iterator = g_list_remove(con->l_output_headers, iterator->data);
+				con->l_output_headers = g_list_delete_link(con->l_output_headers, iterator);
 				free(temp->key);
 				free(temp->value);
 				free(temp);
 			}
 			iterator = next;
 		}
+		// Move back to the top of the list.
+		con->l_output_headers = g_list_first(con->l_output_headers);
     }
     con->l_output_headers = g_list_insert_sorted (
     		con->l_output_headers,
@@ -731,9 +732,6 @@ gboolean http_connection_make_request (HttpConnection *con,
     GList *l;
     const gchar *bucket_name;
     const gchar *host;
-    gchar *cred_expiration;
-    gchar *iam_role;
-    aws_credentials *creds;
 
     if (!con->evcon) {
         if (!http_connection_init (con)) {
@@ -749,37 +747,51 @@ gboolean http_connection_make_request (HttpConnection *con,
     if (conf_node_exists (application_get_conf (con->app), "s3.iam_role")) {
 
     	// Get the date time of current credential expiration.
-    	cred_expiration = conf_get_string (
+    	gchar *cred_expiration = conf_get_string (
     			application_get_conf (con->app),
 				"s3.session_expiration");
-    	if (aws_credential_update_needed(cred_expiration) == 0) {
+    	if (aws_credential_update_needed(cred_expiration) == TRUE) {
+
+    		LOG_debug(CON_LOG, "Time to update IAM credentials.");
+
     		// Get the IAM role
-    		iam_role = conf_get_string (
+    		gchar *iam_role = conf_get_string (
     		    application_get_conf (con->app),
     		    "s3.iam_role");
+
+    		aws_credentials *creds;
+    		creds = malloc(sizeof(*creds));
+
     		if (get_aws_credentials(creds, iam_role) == 0) {
     			if (creds != NULL) {
-    				printf("Successfully retrieved credentials!\n");
+
     				set_aws_credentials(creds, con->app);
+
+    				// Free the space held by the credential struct
+    				free(creds->last_updated);
+    				free(creds->aws_access_key);
+    				free(creds->aws_secret_access_key);
+    		    	free(creds->aws_session_token);
+    				free(creds->expiration);
+    				free(creds);
     			}
-    			free(creds->last_updated);
-    			free(creds->aws_access_key);
-    			free(creds->aws_secret_access_key);
-    			free(creds->aws_session_token);
-    			free(creds->expiration);
-    			free(creds);
-    			printf("Freed memory used by credentials!\n");
+    			else {
+    				Log_err(CON_LOG, "Unable to retrieve IAM credentials from EC2.");
+    			}
     		}
     		else {
     			LOG_err(CON_LOG, "Unable to retrieve updated credentials from EC2.");
     		}
+    		free(iam_role);
     	}
+
+    	free(cred_expiration);
+
     	// Whether credentials need updating or not, make sure the security
     	// session token is added to the output headers.
     	session_token = conf_get_string (
     			application_get_conf (con->app),
 				"s3.session_token");
-    	printf("Adding output header...");
     	http_connection_add_output_header (
     			con,
 				"x-amz-security-token",
