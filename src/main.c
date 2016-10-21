@@ -657,36 +657,6 @@ void log_aws_credentials(Application *app)
 	}
 }
 
-void check_aws_credentials ()
-{
-	const gchar *expiration;
-	const gchar *iam_role;
-	aws_credentials *creds;
-
-	LOG_msg(APP_LOG, "Credential update alarm fired.");
-
-	if (_app)
-	{
-		expiration = conf_get_string (_app->conf, "s3.session_expiration");
-		iam_role = conf_get_string (_app->conf, "s3.iam_role");
-		if (aws_credential_update_needed(expiration))
-		{
-			LOG_msg(APP_LOG, "Credential update needed!");
-			if (creds == NULL) {
-				creds = malloc(sizeof(*creds));
-			}
-			get_aws_credentials(creds, iam_role);
-			set_aws_credentials(creds, _app);
-			free(creds);
-		}
-	}
-	else {
-		LOG_err(APP_LOG, "Global Application reference not yet populated.");
-	}
-	// Reset the alarm
-	alarm(CREDENTIAL_ALARM_DURATION);
-}
-
 /*{{{ main */
 int main (int argc, char *argv[])
 {
@@ -967,11 +937,6 @@ int main (int argc, char *argv[])
     				application_destroy (app);
     				return -1;
     			}
-    			check_aws_credentials();
-    			// Set the alarm to see if we need to update credentials
-    			signal(SIGALRM, check_aws_credentials);
-    			alarm(CREDENTIAL_ALARM_DURATION);
-
     		}
     		else {
     			LOG_err(APP_LOG, "Unable to retrieve EC2 metadata!", argv[0]);
