@@ -747,7 +747,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     if (conf_node_exists (application_get_conf (con->app), "s3.iam_role")) {
 
     	// Get the date time of current credential expiration.
-    	gchar *cred_expiration = conf_get_string (
+    	gchar *cred_expiration = (gchar *)conf_get_string (
     			application_get_conf (con->app),
 				"s3.session_expiration");
     	if (aws_credential_update_needed(cred_expiration) == TRUE) {
@@ -755,7 +755,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     		LOG_debug(CON_LOG, "Time to update IAM credentials.");
 
     		// Get the IAM role
-    		gchar *iam_role = conf_get_string (
+    		gchar *iam_role = (gchar *)conf_get_string (
     		    application_get_conf (con->app),
     		    "s3.iam_role");
 
@@ -776,16 +776,13 @@ gboolean http_connection_make_request (HttpConnection *con,
     				free(creds);
     			}
     			else {
-    				Log_err(CON_LOG, "Unable to retrieve IAM credentials from EC2.");
+    				LOG_err(CON_LOG, "Unable to retrieve IAM credentials from EC2.");
     			}
     		}
     		else {
     			LOG_err(CON_LOG, "Unable to retrieve updated credentials from EC2.");
     		}
-    		free(iam_role);
     	}
-
-    	free(cred_expiration);
 
     	// Whether credentials need updating or not, make sure the security
     	// session token is added to the output headers.

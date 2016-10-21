@@ -605,7 +605,7 @@ int set_aws_credentials(aws_credentials *creds, Application *app) {
 			}
 			else {
 				LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.");
-				return -1
+				return -1;
 			}
 			if (creds->aws_secret_access_key != NULL) {
 				conf_set_string (app->conf, "s3.secret_access_key", creds->aws_secret_access_key);
