@@ -2,7 +2,7 @@
 
 RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on Linux and MacOSX. It supports versioned and non-versioned buckets in all AWS regions. RioFS development started at [Skoobe](https://www.skoobe.de) as a storage backend for legacy daemons which cannot talk natively to S3. It handles buckets with many thousands of keys and highly concurrent access gracefully.  
 
-This particular repository is a fork of the original RioFS with support for IAM roles.  It has an additional dependancy on libcurl.
+This particular repository is a fork of the original RioFS with support for IAM roles.  This version of RioFS also updates the authentication mechanism to AWS Signature Version 4.  It has an additional dependancy on libcurl.
 
 ### Dependencies
 
