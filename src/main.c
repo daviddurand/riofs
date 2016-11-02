@@ -959,7 +959,7 @@ int main (int argc, char *argv[])
     	if (region == NULL) {
     		region = (gchar *)malloc(REGION_STRING_LENGTH);
     	}
-    	if (get_aws_credentials(region) == 0) {
+    	if (get_aws_region(region) == 0) {
     		conf_set_string (app->conf, "s3.region", region);
     	}
     	else {
