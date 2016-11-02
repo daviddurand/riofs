@@ -215,6 +215,18 @@ struct evhttp_connection *http_connection_get_evcon (HttpConnection *con)
 
 /*}}}*/
 
+static gchar *http_connection_get_auth_string_v4 (
+		Application *app,
+        const gchar *method,
+		const gchar *resource,
+		const gchar *time_str,
+
+        GList *l_output_headers) {
+
+	gchar *region = conf_get_string (app->conf, "s3.region");
+
+
+}
 /*{{{ get_auth_string */
 // create  auth string
 // http://docs.amazonwebservices.com/Amazon/2006-03-01/dev/RESTAuthentication.html
@@ -729,6 +741,8 @@ gboolean http_connection_make_request (HttpConnection *con,
     int res;
     enum evhttp_cmd_type cmd_type;
     gchar *request_str = NULL;
+    gchar *dateISO8601 = (gchar *)malloc(ISO_8601_TIMESTAMP_LENGTH);
+    gchar *simple_date = (gchar *)malloc(SIMPLE_DATE_LENGTH);
     GList *l;
     const gchar *bucket_name;
     const gchar *host;
@@ -741,6 +755,14 @@ gboolean http_connection_make_request (HttpConnection *con,
             return FALSE;
         }
     }
+
+    // Get the ISO-8601 and simple date at the same time to ensure they match
+    get_simple_date(simple_date);
+    get_iso8601_date(dateISO8601);
+	http_connection_add_output_header (
+			con,
+			"x-amz-date",
+			dateISO8601);
 
     // If an IAM role is being used for authentication, see if we need to
     // update credentials.
@@ -813,9 +835,9 @@ gboolean http_connection_make_request (HttpConnection *con,
             evbuffer_add (data->out_buffer, tmp, data->out_size);
 
             g_free (tmp);
-        } else
+        } else {
             data->out_size = 0;
-
+        }
         data->retry_id = 0;
         data->enable_retry = enable_retry;
 

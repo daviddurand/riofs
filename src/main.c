@@ -688,6 +688,7 @@ int main (int argc, char *argv[])
     gint fmode = -1;
     gint dmode = -1;
     aws_credentials *credentials;
+    gchar *region;
 
     struct event_config *ev_config;
 
@@ -950,6 +951,23 @@ int main (int argc, char *argv[])
     	}
     }
 
+    // Now check for the existence of the AWS region
+    if (getenv("AWS_REGION")) {
+        conf_set_string (app->conf, "s3.region", getenv ("AWS_REGION"));
+    }
+    if (!conf_get_string (app->conf, "s3.region")) {
+    	if (region == NULL) {
+    		region = (gchar *)malloc(REGION_STRING_LENGTH);
+    	}
+    	if (get_aws_credentials(region) == 0) {
+    		conf_set_string (app->conf, "s3.region", region);
+    	}
+    	else {
+    		LOG_err(APP_LOG, "Unable to obtain the region from EC2.", argv[0]);
+    		application_destroy (app);
+    		return -1;
+    	}
+    }
 
     // foreground is set
     if (foreground)

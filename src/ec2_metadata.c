@@ -18,8 +18,7 @@
  * Construct the EC2 instance metadata URL for retrieving the AWS credentials
  * associated with the IAM role.
  */
-char *get_ec2_metadata_url (char *iam_role)
-{
+char *get_ec2_metadata_security_credentials_url (char *iam_role) {
 	// Determine the size of the required buffer
 	size_t url_length = strlen(EC2_INSTANCE_META_DATA_URL)
 				+ strlen(EC2_IAM_ROLE_OFFSET)
@@ -30,6 +29,22 @@ char *get_ec2_metadata_url (char *iam_role)
 	strcpy(url, EC2_INSTANCE_META_DATA_URL);
 	strcat(url, EC2_IAM_ROLE_OFFSET);
 	strcat(url, iam_role);
+	return url;
+}
+
+/*
+ * Construct the EC2 instance metadata URL for retrieving the AWS credentials
+ * associated with the IAM role.
+ */
+char *get_ec2_metadata_region_url () {
+	// Determine the size of the required buffer
+	size_t url_length = strlen(EC2_INSTANCE_META_DATA_URL)
+				+ strlen(EC2_AVAILABILITY_ZONE_OFFSET)
+				+ 1;
+
+	char *url =  (char *)malloc(url_length);
+	strcpy(url, EC2_INSTANCE_META_DATA_URL);
+	strcat(url, EC2_AVAILABILITY_ZONE_OFFSET);
 	return url;
 }
 
@@ -47,6 +62,26 @@ time_t convert_cred_expiration_string(const char *aws_time)
 	memset(&tm, 0, sizeof(struct tm));
 	strptime(aws_time, "%Y-%m-%dT%H:%M:%S", &tm);
 	return timegm(&tm);
+}
+
+/*
+ * Get the current time in iso-8601 format.
+ */
+void get_iso8601_time(char *time) {
+	struct tm *tmp;
+	time_t now = time(NULL);
+	tmp = gmtime(&now);
+	strftime(time, ISO_8601_TIMESTAMP_LENGTH, "%Y%m%dT%H%M%SZ", tmp);
+}
+
+/*
+ * Get the current time in iso-8601 format.
+ */
+void get_simple_date(char *date) {
+	struct tm *tmp;
+	time_t now = time(NULL);
+	tmp = gmtime(&now);
+	strftime(date, SIMPLE_DATE_LENGTH, "%Y%m%d", tmp);
 }
 
 /*
@@ -98,8 +133,7 @@ static int json_equals(const char *json, jsmntok_t *token, const char *field)
  * This method assumes the availability of the jsmn (i.e. "jasmine") JSON
  * parser library which is embedded with the project.
  */
-int parse_json_response(aws_credentials *creds, char *response)
-{
+int parse_json_response(aws_credentials *creds, char *response) {
 
 	int i; // counter
 	int r;
@@ -180,8 +214,7 @@ int parse_json_response(aws_credentials *creds, char *response)
  * Pre-process the JSON data for input into the jsmn JSON parser.  The
  * jsmn JSON parser does not handle white space well.
  */
-void remove_whitespace(char *json)
-{
+void remove_whitespace(char *json) {
 	int i = 0;
 	int count = 0;
 	for (i = 0; json[i]; i++)
@@ -216,7 +249,7 @@ int get_aws_credentials(aws_credentials *creds, gchar *iam_role) {
 	response.size = 0;
 
 	// Get the target URL
-	url = get_ec2_metadata_url((char *)iam_role);
+	url = get_ec2_metadata_security_credentials_url((char *)iam_role);
 
 	// Initialize the cURL library
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -262,8 +295,7 @@ void print_aws_credentials(aws_credentials *creds) {
  * Compare the expiration time to the current time to see if we need to update
  * the AWS credentials.
  */
-int aws_credential_update_needed(gchar *aws_time)
-{
+int aws_credential_update_needed(gchar *aws_time) {
 	time_t now = time(NULL);
 	time_t expiration_time = convert_cred_expiration_string(aws_time);
 
@@ -273,3 +305,47 @@ int aws_credential_update_needed(gchar *aws_time)
 	return FALSE;
 }
 
+/*
+ * Function that will extract the AWS region from the EC2 metadata if the user
+ * did not supply the region in the configuration file.
+ */
+int get_aws_region(gchar *region) {
+
+	char *url;
+	memory_structure response;
+	CURL *curl_handle;
+	CURLcode result;
+
+	// Initialize the memory that will be used to store the JSON data
+	// returned in the cURL response.
+	response.memory = malloc(1);
+	response.size = 0;
+
+	// Get the target URL
+	url = get_ec2_metadata_region_url();
+
+	// Initialize the cURL library
+	curl_global_init(CURL_GLOBAL_ALL);
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curl_response_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&response);
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+	// Execute the cURL command
+	result = curl_easy_perform(curl_handle);
+	if (result != CURLE_OK) {
+		printf("Error performing cURL operation.  Response [ %i ].", result);
+		return -1;
+	}
+	else {
+		printf("cURL operation successful [ %s ]", response.memory);
+		region = strdup(response.memory);
+	}
+
+	// Cleanup and release memory.
+	curl_easy_cleanup(curl_handle);
+	free(response.memory);
+	curl_global_cleanup();
+	return 0;
+}
