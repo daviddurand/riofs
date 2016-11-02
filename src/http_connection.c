@@ -746,8 +746,8 @@ gboolean http_connection_make_request (HttpConnection *con,
 
     // Get the ISO-8601 and simple date at the same time to ensure they match
     get_simple_date(simple_date);
-    get_iso8601_date(dateISO8601);
-	http_connection_add_output_header (
+    get_iso8601_time(dateISO8601);
+    http_connection_add_output_header (
 			con,
 			"x-amz-date",
 			dateISO8601);
