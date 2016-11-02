@@ -105,7 +105,7 @@ typedef struct {
  * Prototype for function that will construct an ISO-8601 date expected
  * by AWS of the current time.
  */
-void get_iso8601_time(gchar *time);
+void get_iso8601_time(gchar *date);
 
 /*
  * Prototype for function that will construct a simple date that is used

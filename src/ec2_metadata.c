@@ -67,11 +67,11 @@ time_t convert_cred_expiration_string(const char *aws_time)
 /*
  * Get the current time in iso-8601 format.
  */
-void get_iso8601_time(char *time) {
+void get_iso8601_time(char *date) {
 	struct tm *tmp;
 	time_t now = time(NULL);
 	tmp = gmtime(&now);
-	strftime(time, ISO_8601_TIMESTAMP_LENGTH, "%Y%m%dT%H%M%SZ", tmp);
+	strftime(date, ISO_8601_TIMESTAMP_LENGTH, "%Y%m%dT%H%M%SZ", tmp);
 }
 
 /*
