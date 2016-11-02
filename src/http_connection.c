@@ -215,18 +215,6 @@ struct evhttp_connection *http_connection_get_evcon (HttpConnection *con)
 
 /*}}}*/
 
-static gchar *http_connection_get_auth_string_v4 (
-		Application *app,
-        const gchar *method,
-		const gchar *resource,
-		const gchar *time_str,
-
-        GList *l_output_headers) {
-
-	gchar *region = conf_get_string (app->conf, "s3.region");
-
-
-}
 /*{{{ get_auth_string */
 // create  auth string
 // http://docs.amazonwebservices.com/Amazon/2006-03-01/dev/RESTAuthentication.html

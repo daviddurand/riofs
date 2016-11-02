@@ -87,12 +87,12 @@ typedef struct {
  * The length of the timestamp required for constructing the AWS v4
  * signatures
  */
-#define SIMPLE_DATE_LENGTH = 9
+#define SIMPLE_DATE_LENGTH 9
 
 /*
  * AWS region string length
  */
-#define REGION_STRING_LENGTH = 21
+#define REGION_STRING_LENGTH 21
 
 /*
  * New credentials should be made available when we are within 5 minutes
