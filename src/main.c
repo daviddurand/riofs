@@ -912,24 +912,24 @@ int main (int argc, char *argv[])
     		}
     		get_aws_credentials(credentials, conf_get_string (app->conf, "s3.iam_role"));
     		if (credentials != NULL) {
-    			if (credentials.aws_access_key != NULL) {
-    				conf_set_string (app->conf, "s3.access_key_id", credentials.aws_access_key);
+    			if (credentials->aws_access_key != NULL) {
+    				conf_set_string (app->conf, "s3.access_key_id", credentials->aws_access_key);
     			}
     			else {
     				LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.", argv[0]);
     				application_destroy (app);
     				return -1;
     			}
-    			if (credentials.aws_secret_access_key != NULL) {
-    				conf_set_string (app->conf, "s3.secret_access_key", credentials.aws_secret_access_key);
+    			if (credentials->aws_secret_access_key != NULL) {
+    				conf_set_string (app->conf, "s3.secret_access_key", credentials->aws_secret_access_key);
     			}
     			else {
     				LOG_err(APP_LOG, "Unable to obtain secret access key from EC2.", argv[0]);
     				application_destroy (app);
     				return -1;
     			}
-    			if (credentials.aws_session_token != NULL) {
-    				conf_set_string (app->conf, "s3.session_token", credentials.aws_session_token);
+    			if (credentials->aws_session_token != NULL) {
+    				conf_set_string (app->conf, "s3->session_token", credentials->aws_session_token);
     			}
     			else {
     				LOG_err(APP_LOG, "Unable to obtain the session token from EC2.", argv[0]);

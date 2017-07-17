@@ -41,7 +41,7 @@
 #endif
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
-    #include <ucontext.h>
+    #include <sys/ucontext.h>
 #endif
 
 #include <signal.h>
