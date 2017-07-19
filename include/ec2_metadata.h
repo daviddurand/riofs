@@ -91,4 +91,7 @@ int aws_credential_update_needed(gchar *aws_time);
  */
 int get_aws_credentials(aws_credentials *creds, gchar *iam_role);
 
+/* print the credentials as needed for debugging */
+void print_aws_credentials(aws_credentials *creds);
+
 #endif /* INCLUDE_EC2_METADATA_H_ */

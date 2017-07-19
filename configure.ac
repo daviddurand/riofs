@@ -85,7 +85,7 @@ AC_ARG_WITH(libevent,
         CFLAGS="-I$with_libcurl/include"
         LDFLAGS="-L$with_libcurl/lib -lcurl"
 
-        AC_CHECK_HEADERS(curl.h, [],
+        AC_CHECK_HEADERS(curl/curl.h, [],
             AC_MSG_ERROR([libcurl headers not found or not usable])
         )
 
