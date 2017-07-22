@@ -45,7 +45,7 @@ void conf_copy_entry (ConfData *dest, ConfData *src, const gchar *path, gboolean
 gboolean conf_node_exists (ConfData *conf, const gchar *path);
 
 void conf_print (ConfData *conf);
-
+void conf_clear(ConfData *conf, const gchar *path);
 typedef void (*ConfNodeChangeCB) (const gchar *path, gpointer user_data);
 gboolean conf_set_node_change_cb (ConfData *conf, const gchar *path, ConfNodeChangeCB change_cb, gpointer user_data);
 

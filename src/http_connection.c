@@ -235,9 +235,6 @@ static gchar *http_connection_get_auth_string (Application *app,
     s_headers = g_string_new ("");
     for (l = g_list_first (l_output_headers); l; l = g_list_next (l)) {
         HttpConnectionHeader *header = (HttpConnectionHeader *) l->data;
-
-
-
         if (!strncmp ("Content-MD5", header->key, strlen ("Content-MD5"))) {
             if (content_md5)
                 g_free (content_md5);
@@ -579,6 +576,15 @@ static void http_connection_on_response_cb (struct evhttp_request *req, void *ct
     buf_len = evbuffer_get_length (inbuf);
     buf = (const char *) evbuffer_pullup (inbuf, buf_len);
 
+    if (evhttp_request_get_response_code (req) == 403 &&
+        conf_node_exists(application_get_conf (data->con->app), "s3.iam_role")) {
+        LOG_err (CON_LOG, CON_H" HTTP result 403, with IAM, attempting to force credential renewal !", (void *)con);
+        conf_clear(application_get_conf (data->con->app), "s3.session_expiration");
+        if (data->response_cb) {
+           data->response_cb (data->con, data->ctx, FALSE, NULL, 0, NULL);
+        }
+        goto done;
+    }
     // OK codes are:
     // 200
     // 204 (No Content)
@@ -648,20 +654,20 @@ static gint hdr_compare (const HttpConnectionHeader *a, const HttpConnectionHead
  */
 void http_connection_header_remove(GList *headers, HttpConnectionHeader *candidate)
 {
-		GList *l;
-		HttpConnectionHeader *header_to_remove;
-		for (l = g_list_first(headers); l; g_list_next(l)) {
-				HttpConnectionHeader *header = l->data;
-				if (strcmp(header->key, candidate->key) == 0)
-				{
-						header_to_remove = header;
-						break;
-				}
-		}
-		if (header_to_remove != NULL)
-		{
-				headers = g_list_remove(headers, header_to_remove);
-		}
+    GList *l;
+    HttpConnectionHeader *header_to_remove;
+    for (l = g_list_first(headers); l; g_list_next(l)) {
+            HttpConnectionHeader *header = l->data;
+            if (strcmp(header->key, candidate->key) == 0)
+            {
+                    header_to_remove = header;
+                    break;
+            }
+    }
+    if (header_to_remove != NULL)
+    {
+            headers = g_list_remove(headers, header_to_remove);
+    }
 }
 
 
@@ -678,25 +684,25 @@ void http_connection_add_output_header (HttpConnection *con, const gchar *key, c
 
     // Make sure that we don't add the same header twice
     if (con->l_output_headers != NULL) {
-		GList *iterator = g_list_first(con->l_output_headers);
-		while (iterator != NULL) {
-			GList *next = iterator->next;
-			temp = (HttpConnectionHeader *)iterator->data;
-			if (strcmp(key, temp->key) == 0) {
-				con->l_output_headers = g_list_delete_link(con->l_output_headers, iterator);
-				free(temp->key);
-				free(temp->value);
-				free(temp);
-			}
-			iterator = next;
-		}
-		// Move back to the top of the list.
-		con->l_output_headers = g_list_first(con->l_output_headers);
+        GList *iterator = g_list_first(con->l_output_headers);
+        while (iterator != NULL) {
+            GList *next = iterator->next;
+            temp = (HttpConnectionHeader *)iterator->data;
+            if (strcmp(key, temp->key) == 0) {
+                con->l_output_headers = g_list_delete_link(con->l_output_headers, iterator);
+                free(temp->key);
+                free(temp->value);
+                free(temp);
+            }
+            iterator = next;
+        }
+        // Move back to the top of the list.
+        con->l_output_headers = g_list_first(con->l_output_headers);
     }
     con->l_output_headers = g_list_insert_sorted (
-    		con->l_output_headers,
-			header,
-			(GCompareFunc) hdr_compare);
+            con->l_output_headers,
+            header,
+            (GCompareFunc) hdr_compare);
 }
 
 static void http_connection_free_headers (GList *l_headers)
@@ -746,55 +752,55 @@ gboolean http_connection_make_request (HttpConnection *con,
     // If an IAM role is being used for authentication, see if we need to
     // update credentials.
     if (conf_node_exists (application_get_conf (con->app), "s3.iam_role")) {
+        LOG_debug(CON_LOG, "checking IAM situation");
+        // Get the date time of current credential expiration.
+        gchar *cred_expiration = (gchar *)conf_get_string (
+                application_get_conf (con->app),
+                "s3.session_expiration");
+        if (aws_credential_update_needed(cred_expiration) == TRUE) {
 
-    		LOG_debug(CON_LOG, "checking IAM situation");
-    	// Get the date time of current credential expiration.
-    	gchar *cred_expiration = (gchar *)conf_get_string (
-    			application_get_conf (con->app),
-				"s3.session_expiration");
-    	if (aws_credential_update_needed(cred_expiration) == TRUE) {
+            LOG_debug(CON_LOG, "Time to update IAM credentials.");
 
-    		LOG_debug(CON_LOG, "Time to update IAM credentials.");
+            // Get the IAM role
+            gchar *iam_role = (gchar *)conf_get_string (
+                application_get_conf (con->app),
+                "s3.iam_role");
 
-    		// Get the IAM role
-    		gchar *iam_role = (gchar *)conf_get_string (
-    		    application_get_conf (con->app),
-    		    "s3.iam_role");
+            aws_credentials *creds;
+            creds = malloc(sizeof(*creds));
 
-    		aws_credentials *creds;
-    		creds = malloc(sizeof(*creds));
+            if (get_aws_credentials(creds, iam_role) == 0) {
+                if (creds != NULL) {
+                    set_aws_credentials(creds, con->app);
 
-    		if (get_aws_credentials(creds, iam_role) == 0) {
-    			if (creds != NULL) {
+                    // Free the space held by the credential struct
+                    free(creds->last_updated);
+                    free(creds->aws_access_key);
+                    free(creds->aws_secret_access_key);
+                    free(creds->aws_session_token);
+                    free(creds->expiration);
+                    free(creds);
+                }
+                else {
+                    LOG_err(CON_LOG, "Unable to retrieve IAM credentials from EC2.");
+                }
+            }
+            else {
+                LOG_err(CON_LOG, "Unable to retrieve updated credentials from EC2.");
+            }
+        }
 
-    				set_aws_credentials(creds, con->app);
-
-    				// Free the space held by the credential struct
-    				free(creds->last_updated);
-    				free(creds->aws_access_key);
-    				free(creds->aws_secret_access_key);
-    		    	free(creds->aws_session_token);
-    				free(creds->expiration);
-    				free(creds);
-    			}
-    			else {
-    				LOG_err(CON_LOG, "Unable to retrieve IAM credentials from EC2.");
-    			}
-    		}
-    		else {
-    			LOG_err(CON_LOG, "Unable to retrieve updated credentials from EC2.");
-    		}
-    	}
-
-    	// Whether credentials need updating or not, make sure the security
-    	// session token is added to the output headers.
-    	session_token = conf_get_string (
-    			application_get_conf (con->app),
-				"s3.session_token");
-    	http_connection_add_output_header (
-    			con,
-				"x-amz-security-token",
-				session_token);
+        // Whether credentials need updating or not, make sure the security
+        // session token is added to the output headers.
+        session_token = conf_get_string (
+                application_get_conf (con->app),
+                "s3.session_token");
+        if (session_token != NULL) {
+            http_connection_add_output_header (
+                   con,
+                   "x-amz-security-token",
+                   session_token);
+        }
     }
 
     // if this is the first request
@@ -802,7 +808,7 @@ gboolean http_connection_make_request (HttpConnection *con,
 
         data = g_new0 (RequestData, 1);
         data->redirects = 0;
-        data->resource_path = url_escape (resource_path);
+        data->resource_path = strdup(resource_path);
         data->http_cmd = g_strdup (http_cmd);
         data->out_buffer = evbuffer_new ();
         if (out_buffer) {

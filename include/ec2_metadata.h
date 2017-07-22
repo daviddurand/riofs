@@ -12,19 +12,19 @@
  * Memory structure used to hold data returned by the curl GET requests.
  */
 typedef struct  {
-	char *memory;
-	size_t size;
+    char *memory;
+    size_t size;
 } memory_structure;
 
 /*
  * Memory structure used to hold the parsed AWS credential data.
  */
 typedef struct {
-	char *last_updated;
-	char *aws_access_key;
-	char *aws_secret_access_key;
-	char *aws_session_token;
-	char *expiration;
+    char *last_updated;
+    char *aws_access_key;
+    char *aws_secret_access_key;
+    char *aws_session_token;
+    char *expiration;
 } aws_credentials;
 
 /*
