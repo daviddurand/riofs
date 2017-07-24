@@ -365,9 +365,9 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
 
     //XXX: fix dir_path
     if (!strlen (dir_path)) {
-        dir_req->dir_path = g_strdup ("");
+        dir_req->dir_path = g_strdup (conf_get_string (application_get_conf (con->app), "s3.bucket_prefix_path"));
     } else {
-        dir_req->dir_path = g_strdup_printf ("%s/", dir_path);
+        dir_req->dir_path = g_strdup_printf ("%s%s/", conf_get_string (application_get_conf (con->app), "s3.bucket_prefix_path"), dir_path);
     }
 
     req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s", dir_req->max_keys, dir_req->dir_path);

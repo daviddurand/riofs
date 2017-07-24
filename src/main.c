@@ -301,6 +301,7 @@ static void sigusr1_cb (G_GNUC_UNUSED evutil_socket_t sig, G_GNUC_UNUSED short e
                 "s3.session_token",
                 "s3.session_expiration",
                 "s3.bucket_name",
+                "s3.bucket_prefix_path",
                 NULL};
         int i;
 
@@ -682,6 +683,7 @@ int main (int argc, char *argv[])
     gchar **cache_dir = NULL;
     gchar **s_fuse_opts = NULL;
     gchar **s_log_file = NULL;
+    gchar **bucket_prefix_path = NULL;
     guint32 part_size = 0;
     gboolean disable_syslog = FALSE;
     gboolean disable_stats = FALSE;
@@ -711,6 +713,7 @@ int main (int argc, char *argv[])
         { "foreground", 'f', 0, G_OPTION_ARG_NONE, &foreground, "Flag. Do not daemonize process.", NULL },
         { "cache-dir", 0, 0, G_OPTION_ARG_STRING_ARRAY, &cache_dir, "Set cache directory.", NULL },
         { "fuse-options", 'o', 0, G_OPTION_ARG_STRING_ARRAY, &s_fuse_opts, "Fuse options.", "\"opt[,opt...]\"" },
+        { "bucket_prefix_path", 'p', 0, G_OPTION_ARG_STRING_ARRAY, &bucket_prefix_path, "prefix path for mount point within bucket.", NULL },
         { "disable-syslog", 0, 0, G_OPTION_ARG_NONE, &disable_syslog, "Flag. Disable logging to syslog.", NULL },
         { "disable-stats", 0, 0, G_OPTION_ARG_NONE, &disable_stats, "Flag. Disable Statistics HTTP interface.", NULL },
         { "part-size", 0, 0, G_OPTION_ARG_INT, &part_size, "Set file part size (in bytes).", NULL },
@@ -896,10 +899,16 @@ int main (int argc, char *argv[])
     if (getenv("AWS_IAM_ROLE")) {
         conf_set_string (app->conf, "s3.iam_role", getenv ("AWS_IAM_ROLE"));
     }
-
+    if (bucket_prefix_path && g_strv_length (bucket_prefix_path) > 0) {
+        conf_set_string (app->conf, "s3.bucket_prefix_path", bucket_prefix_path[0]);
+        g_strfreev (bucket_prefix_path);
+    } else if (!conf_node_exists (app->conf, "s3.bucket_prefix_path")) {
+        conf_set_string (app->conf, "s3.bucket_prefix_path", "");
+    }
+    
     // check if both strings are set
-    if (!conf_get_string (app->conf, "s3.access_key_id") ||
-            !conf_get_string (app->conf, "s3.secret_access_key")) {
+    if (!conf_node_exists (app->conf, "s3.access_key_id") ||
+            !conf_node_exists (app->conf, "s3.secret_access_key")) {
         // Only exit if the IAM_ROLE is also not set.
         if (!conf_node_exists (app->conf, "s3.iam_role")) {
             LOG_err (APP_LOG, "Environment variables are not set!\nTry `%s --help' for more information.", argv[0]);

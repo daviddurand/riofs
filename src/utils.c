@@ -215,7 +215,7 @@ static const unsigned char urlchr_table[256] =
     U,  0,  U, RU,   R,  U,  R,  0,   /* SP  !   "   #    $   %   &   '   */
     0,  0,  0, RU,   R,  0,  0,  R,   /* (   )   *   +    ,   -   .   /   */
     0,  0,  0,  0,   0,  0,  0,  0,   /* 0   1   2   3    4   5   6   7   */
-    0,  0, RU,  R,   U,  R,  U,  R,   /* 8   9   :   ;    <   =   >   ?   */
+    0,  0, RU,  R,   U,  R,  U,  RU,   /* 8   9   :   ;    <   =   >   ?   */
     RU,  0,  0,  0,   0,  0,  0,  0,   /* @   A   B   C    D   E   F   G   */
     0,  0,  0,  0,   0,  0,  0,  0,   /* H   I   J   K    L   M   N   O   */
     0,  0,  0,  0,   0,  0,  0,  0,   /* P   Q   R   S    T   U   V   W   */
@@ -280,6 +280,15 @@ static char *url_escape_1 (const char *s, unsigned char mask)
 char *url_escape (const char *s)
 {
     return url_escape_1 (s, urlchr_unsafe);
+}
+
+char *filepath_for_url(HttpConnection *con, const char * fname) {
+    char *escaped = url_escape(fname);
+    char *result = g_strdup_printf("/%s%s",
+                        conf_get_string (application_get_conf (con->app), "s3.bucket_prefix_path"),
+                        escaped);
+            g_free(escaped);
+    return result;
 }
 
 // copy-paste from glib sources

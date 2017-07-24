@@ -19,6 +19,7 @@
 #define _UTILS_H_
 
 #include "global.h"
+#include "http_connection.h"
 
 gchar *get_random_string (size_t len, gboolean readable);
 gboolean get_md5_sum (const gchar *buf, size_t len, gchar **md5str, gchar **md5b);
@@ -39,6 +40,8 @@ gchar *str_remove_quotes (gchar *str);
 /* URL-escape the unsafe characters in a given
    string, returning a freshly allocated string.  */
 char *url_escape (const char *s);
+// add slash at front of filename, and url_escape for coming request.
+char *filepath_for_url(HttpConnection *con, const char * fname);
 
 // this function was added to glib since v2.32
 void _queue_free_full (GQueue *queue, GDestroyNotify  free_func);

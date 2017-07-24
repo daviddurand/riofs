@@ -848,7 +848,7 @@ static void dir_tree_on_lookup_con_cb (gpointer client, gpointer ctx)
 
     http_connection_acquire (con);
 
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+    req_path = filepath_for_url (con,en->fullpath);
 
     res = http_connection_make_request (con,
         req_path, "HEAD", NULL, FALSE, NULL,
@@ -980,7 +980,7 @@ static void dir_tree_on_lookup_not_found_con_cb (gpointer client, gpointer ctx)
     else
         fullpath = g_strdup_printf ("%s/%s", parent_en->fullpath, op_data->name);
 
-    req_path = g_strdup_printf ("/%s", fullpath);
+    req_path = filepath_for_url (con, fullpath);
 
     g_free (fullpath);
 
@@ -1600,7 +1600,7 @@ static void dir_tree_file_remove_on_con_cb (gpointer client, gpointer ctx)
 
     http_connection_acquire (con);
 
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+    req_path = filepath_for_url (con,en->fullpath);
     res = http_connection_make_request (con,
         req_path, "DELETE",
         NULL, TRUE, NULL,
@@ -1906,7 +1906,7 @@ static void dir_tree_on_rename_delete_con_cb (gpointer client, gpointer ctx)
     }
 
     http_connection_acquire (con);
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+    req_path = filepath_for_url (con,en->fullpath);
     res = http_connection_make_request (con,
         req_path, "DELETE",
         NULL, TRUE, NULL,
@@ -2024,16 +2024,23 @@ static void dir_tree_on_rename_copy_con_cb (gpointer client, gpointer ctx)
     http_connection_acquire (con);
 
     // source
-    src_path = g_strdup_printf ("%s/%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_name"), en->fullpath);
+    char * temp = g_strdup_printf ("%s/%s%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_name"),
+                                    conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_prefix_path"), en->fullpath);
+    src_path = url_escape(temp);
+    g_free (temp);
     http_connection_add_output_header (con, "x-amz-copy-source", src_path);
     g_free (src_path);
 
     http_connection_add_output_header (con, "x-amz-storage-class", conf_get_string (application_get_conf (rdata->dtree->app), "s3.storage_type"));
 
     if (rdata->newparent_ino == FUSE_ROOT_ID)
-        dst_path = g_strdup_printf ("%s/%s", newparent_en->fullpath, rdata->newname);
+        temp = g_strdup_printf ("%s%s/%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_prefix_path"),
+                    newparent_en->fullpath, rdata->newname);
     else
-        dst_path = g_strdup_printf ("/%s/%s", newparent_en->fullpath, rdata->newname);
+        temp = g_strdup_printf ("/%s%s/%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_prefix_path"),
+                    newparent_en->fullpath, rdata->newname);
+    dst_path = url_escape(temp);
+    g_free(temp);
 
     LOG_debug (DIR_TREE_LOG, INO_CON_H"Rename: coping %s to %s", INO_T (en->ino), (void *)con, en->fullpath, dst_path);
 
@@ -2260,7 +2267,7 @@ static void dir_tree_on_getxattr_con_cb (gpointer client, gpointer ctx)
 
     http_connection_acquire (con);
 
-    req_path = g_strdup_printf ("/%s", en->fullpath);
+    req_path = filepath_for_url (con,en->fullpath);
 
     res = http_connection_make_request (con,
         req_path, "HEAD", NULL, FALSE, NULL,

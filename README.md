@@ -4,6 +4,10 @@ RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on L
 
 This particular repository is a fork of the original RioFS with support for IAM roles.  It has an additional dependancy on libcurl.
 
+It also supports a bucket_path_prefix argument and configuration parameter, that can be used to store more
+that one filesystem in a bucket. The path prefix should normally end with a slash, otherwise the non-directory nature
+of the resulting file system view will be confusing.
+
 ### Dependencies
 
 * C compiler
@@ -42,15 +46,32 @@ riofs [options] [bucketname] [mountpoint]
 #### Options
 
 ```
--v: Verbose output.
--f: Do not daemonize process.
--c path: Path to configuration file.
--o "opt[,opt...]": fuse options
--l path: Log file to use.
---uid: Set UID of filesystem owner.
---gid: Set GID of filesystem owner.
---fmode: Set mode for files.
---dmode: Set mode for directories.
+Usage:
+  riofs [OPTION?] [bucketname] [mountpoint]
+
+Help Options:
+  -h, --help                                  Show help options
+
+Application Options:
+  -c, --config                                Path to configuration file. Default: /usr/local/Cellar/riofs/0.6/etc/riofs/riofs.conf.xml
+  --uid                                       Set UID of filesystem owner.
+  --gid                                       Set GID of filesystem owner.
+  --fmode                                     Set mode for all files.
+  --dmode                                     Set mode for all directories.
+  -f, --foreground                            Flag. Do not daemonize process.
+  --cache-dir                                 Set cache directory.
+  -o, --fuse-options="opt[,opt...]"           Fuse options.
+  -p, --bucket_prefix_path="opt[,opt...]"     prefix path for mount point within bucket.
+  --disable-syslog                            Flag. Disable logging to syslog.
+  --disable-stats                             Flag. Disable Statistics HTTP interface.
+  --part-size                                 Set file part size (in bytes).
+  -l, --log-file                              File to write output.
+  --force-head-requests                       Flag. Send HEAD request for each file.
+  -v, --verbose                               Verbose output.
+  -V, --version                               Show application version and exit.
+
+Please set both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables,
+put then in the config file, or use an IAM role on an EC2 instance!
 ```
 
 #### Hints

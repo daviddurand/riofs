@@ -57,12 +57,16 @@ typedef struct {
 FileIO *fileio_create (Application *app, const gchar *fname, fuse_ino_t ino, gboolean assume_new)
 {
     FileIO *fop;
+    char* tmp;
 
     fop = g_new0 (FileIO, 1);
     fop->app = app;
     fop->current_size = 0;
     fop->write_buf = evbuffer_new ();
-    fop->fname = g_strdup_printf ("/%s", fname);
+    tmp = g_strdup_printf ("/%s%s", conf_get_string (application_get_conf (app), "s3.bucket_prefix_path"),
+                     fname);
+    fop->fname = url_escape(tmp);
+    g_free(tmp);
     fop->content_type = NULL;
     fop->file_size = 0;
     fop->head_req_sent = FALSE;
@@ -252,11 +256,10 @@ static void fileio_release_on_part_con_cb (gpointer client, gpointer ctx)
         }
 
         path = g_strdup_printf ("%s?partNumber=%u&uploadId=%s",
-            fop->fname, fop->part_number, fop->uploadid);
+        fop->fname, fop->part_number, fop->uploadid);
         fop->part_number++;
-
     } else {
-        path = g_strdup (fop->fname);
+        path = fop->fname;
     }
 
 #ifdef MAGIC_ENABLED
@@ -297,7 +300,6 @@ static void fileio_release_on_part_con_cb (gpointer client, gpointer ctx)
         fileio_release_on_part_sent_cb,
         fop
     );
-    g_free (path);
 
     if (!res) {
         LOG_err (FIO_LOG, INO_CON_H"Failed to create HTTP request !", INO_T (fop->ino), (void *)con);
@@ -754,7 +756,6 @@ static void fileio_read_on_con_cb (gpointer client, gpointer ctx)
         fileio_read_on_get_cb,
         rdata
     );
-
     if (!res) {
         LOG_err (FIO_LOG, INO_CON_H"Failed to create HTTP request !", INO_T (rdata->ino), (void *)con);
         http_connection_release (con);
