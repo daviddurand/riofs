@@ -365,8 +365,10 @@ static void rfuse_on_read (G_GNUC_UNUSED evutil_socket_t fd, G_GNUC_UNUSED short
 #endif
     } while (res == -EINTR);
 
-    if (res == 0)
+    if (res == 0) {
         LOG_err (FUSE_LOG, "fuse_chan_recv gave EOF");
+        rfuse_unmount(rfuse);
+    }
 
     if (res < 0 && res != -EAGAIN)
         LOG_err (FUSE_LOG, "fuse_chan_recv failed: %s", strerror(-res));
