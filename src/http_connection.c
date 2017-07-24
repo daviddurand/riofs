@@ -100,7 +100,8 @@ static gboolean http_connection_init (HttpConnection *con)
             application_get_evbase (con->app),
             -1, ssl,
             BUFFEREVENT_SSL_CONNECTING,
-            BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS
+            BEV_OPT_CLOSE_ON_FREE
+            /*  | BEV_OPT_DEFER_CALLBACKS sometimes crashes with this option set for ssl on Linux */
         );
 
         if (!bev) {
