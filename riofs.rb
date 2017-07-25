@@ -1,8 +1,8 @@
 require 'formula'
 
 class Riofs < Formula
-  homepage 'https://github.com/skoobe/riofs'
-  url 'https://github.com/skoobe/riofs.git'
+  homepage 'https://github.com/daviddurand/riofs'
+  url 'https://github.com/daviddurand/riofs.git'
   version '0.6'
 
   depends_on 'autoconf' => :build
