@@ -904,7 +904,7 @@ int main (int argc, char *argv[])
 			return -1;
     	}
     	else {
-    		LOG_msg(APP_LOG, "Using IAM_ROLE [ %s ].", conf_get_string (app->conf, "s3.iam_role"));
+    		LOG_msg(APP_LOG, "Using IAM_ROLE [ %s ].\n", conf_get_string (app->conf, "s3.iam_role"));
     		// Initialize the application credentials based on the current EC2 credentials
     		if (credentials == NULL) {
     			credentials = malloc(sizeof(*credentials));
@@ -927,8 +927,8 @@ int main (int argc, char *argv[])
     				application_destroy (app);
     				return -1;
     			}
-    			if (credentials.aws_session_token != NULL) {
-    				conf_set_string (app->conf, "s3.session_token", credentials.aws_session_token);
+    			if (credentials->aws_session_token != NULL) {
+    				conf_set_string (app->conf, "s3.session_token", credentials->aws_session_token);
     			}
     			else {
     				LOG_err(APP_LOG, "Unable to obtain the session token from EC2.", argv[0]);
@@ -968,6 +968,7 @@ int main (int argc, char *argv[])
 
     conf_set_string (app->conf, "s3.bucket_name", s_params[0]);
     if (!application_set_url (app, conf_get_string (app->conf, "s3.endpoint"))) {
+    	LOG_err(APP_LOG, "could not configure s3 bucket", argv[0]);
         application_destroy (app);
         return -1;
     }
@@ -1040,6 +1041,7 @@ int main (int argc, char *argv[])
 
     // perform the initial request to get  bucket ACL (handles redirect as well)
     app->service_con = http_connection_create (app);
+
     if (!app->service_con)  {
         application_destroy (app);
         return -1;

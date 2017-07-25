@@ -747,6 +747,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     // update credentials.
     if (conf_node_exists (application_get_conf (con->app), "s3.iam_role")) {
 
+    		LOG_debug(CON_LOG, "checking IAM situation");
     	// Get the date time of current credential expiration.
     	gchar *cred_expiration = (gchar *)conf_get_string (
     			application_get_conf (con->app),
