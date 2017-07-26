@@ -89,7 +89,7 @@ int aws_credential_update_needed(gchar *aws_time);
  * Prototype for function that will retrieve the AWS credential data
  * associated with the IAM role.
  */
-int get_aws_credentials(aws_credentials *creds, gchar *iam_role);
+int get_aws_credentials(aws_credentials *creds, const gchar *iam_role);
 
 /* print the credentials as needed for debugging */
 void print_aws_credentials(aws_credentials *creds);

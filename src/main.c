@@ -655,7 +655,7 @@ void log_aws_credentials(Application *app)
     const char *secret_access_key;
 
     if (app != NULL) {
-        LOG_msg("Using IAM role [ %s ]", conf_get_string (_app->conf, "s3.access_key_id"));
+        LOG_msg(APP_LOG, "Using IAM role [ %s ]", conf_get_string (_app->conf, "s3.access_key_id"));
         expiration = conf_get_string (_app->conf, "s3.session_expiration");
         iam_role = conf_get_string (_app->conf, "s3.iam_role");
         secret_access_key = conf_get_string (_app->conf, "s3.secret_access_key");
@@ -927,7 +927,7 @@ int main (int argc, char *argv[])
                     conf_set_string (app->conf, "s3.access_key_id", credentials->aws_access_key);
                 }
                 else {
-                    LOG_err(APP_LOG, "Unable to obtain access key ID from EC2.", argv[0]);
+                    LOG_err(APP_LOG, "%s: Unable to obtain access key ID from EC2.", argv[0]);
                     application_destroy (app);
                     return -1;
                 }
@@ -935,7 +935,7 @@ int main (int argc, char *argv[])
                     conf_set_string (app->conf, "s3.secret_access_key", credentials->aws_secret_access_key);
                 }
                 else {
-                    LOG_err(APP_LOG, "Unable to obtain secret access key from EC2.", argv[0]);
+                    LOG_err(APP_LOG, "%s: Unable to obtain secret access key from EC2.", argv[0]);
                     application_destroy (app);
                     return -1;
                 }
@@ -943,7 +943,7 @@ int main (int argc, char *argv[])
                     conf_set_string (app->conf, "s3.session_token", credentials->aws_session_token);
                 }
                 else {
-                    LOG_err(APP_LOG, "Unable to obtain the session token from EC2.", argv[0]);
+                    LOG_err(APP_LOG, "%s: Unable to obtain the session token from EC2.", argv[0]);
                     application_destroy (app);
                     return -1;
                 }
@@ -951,13 +951,13 @@ int main (int argc, char *argv[])
                     conf_set_string (app->conf, "s3.session_expiration", credentials->expiration);
                 }
                 else {
-                    LOG_err(APP_LOG, "Unable to obtain the session expiration time from EC2.", argv[0]);
+                    LOG_err(APP_LOG, "%s: Unable to obtain the session expiration time from EC2.", argv[0]);
                     application_destroy (app);
                     return -1;
                 }
             }
             else {
-                LOG_err(APP_LOG, "Unable to retrieve EC2 metadata!", argv[0]);
+                LOG_err(APP_LOG, "%s: Unable to retrieve EC2 metadata!", argv[0]);
             }
         }
     }
@@ -980,7 +980,7 @@ int main (int argc, char *argv[])
 
     conf_set_string (app->conf, "s3.bucket_name", s_params[0]);
     if (!application_set_url (app, conf_get_string (app->conf, "s3.endpoint"))) {
-        LOG_err(APP_LOG, "could not configure s3 bucket", argv[0]);
+        LOG_err(APP_LOG, "%s: could not configure s3 bucket", argv[0]);
         application_destroy (app);
         return -1;
     }

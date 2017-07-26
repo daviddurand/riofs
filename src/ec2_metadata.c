@@ -200,7 +200,7 @@ void remove_whitespace(char *json)
 /*
  * Retrieve the current credentials from AWS.
  */
-int get_aws_credentials(aws_credentials *creds, gchar *iam_role) {
+int get_aws_credentials(aws_credentials *creds, const gchar *iam_role) {
 
     char *url;
     memory_structure response;
